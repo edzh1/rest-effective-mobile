@@ -1,4 +1,15 @@
 # Тестовое задание Junior Golang Developer
+Данные не стал нормализовывать, т.к. не было задания управлять справочниками сервисов и т.п.
+
+Запуск (файл с кредами заполнен для упрощения тестов). 
+
+```bash
+cp .env.template .env
+docker compose up --build
+```
+
+[Swagger - http://localhost:3000/swagger/index.html](http://localhost:3000/swagger/index.html)
+
 
 Задача:
 - спроектировать и реализовать REST-сервис для агрегации данных об онлайн-подписках пользователей.
