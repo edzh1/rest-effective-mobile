@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:latest
-    container_name: effective-mobile-pg
     env_file:
       - ./.env 
     environment:
@@ -15,11 +14,42 @@ services:
       - ./pgdata:/var/lib/postgresql/data/pgdata
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - app-network
+  migrations:
+    build:
+      context: ./migrations
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure
+  app:
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure
+    ports:
+      - "3000:3000"
 
 volumes:
   pgdata:
     driver: local
+
+networks:
+  app-network:
+    driver: bridge
