@@ -38,7 +38,7 @@ func (app *application) subscriptionView(w http.ResponseWriter, r *http.Request)
 		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
 		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			app.serverError(w, r, err)
 		}
 		return
 	}
@@ -53,7 +53,7 @@ func (app *application) subscriptionView(w http.ResponseWriter, r *http.Request)
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
 		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			app.serverError(w, r, err)
 		}
 		return
 	}
@@ -125,7 +125,7 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -138,8 +138,6 @@ func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Reques
 	defer reader.Close()
 
 	body, err := io.ReadAll(reader)
-	// TODO check for server errors
-	// TODO add validator
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
@@ -185,7 +183,7 @@ func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Reques
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -243,7 +241,7 @@ func (app *application) subscriptionUpdate(w http.ResponseWriter, r *http.Reques
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -264,7 +262,7 @@ func (app *application) subscriptionDelete(w http.ResponseWriter, r *http.Reques
 		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
 		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			app.serverError(w, r, err)
 		}
 		return
 	}
@@ -277,7 +275,7 @@ func (app *application) subscriptionDelete(w http.ResponseWriter, r *http.Reques
 
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 

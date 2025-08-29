@@ -51,8 +51,10 @@ func main() {
 		subscriptions: &models.SubscriptionModel{DB: db},
 	}
 
+	logger.Info("starting server on " + os.Getenv("ADDR"))
 	err = http.ListenAndServe(os.Getenv("ADDR"), app.routes())
 	if err != nil {
-		log.Fatal("can't start server " + err.Error())
+		logger.Error(err.Error())
+		return
 	}
 }

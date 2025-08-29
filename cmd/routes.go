@@ -12,5 +12,5 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("PUT /subscriptions/{id}", app.subscriptionUpdate)
 	mux.HandleFunc("DELETE /subscriptions/{id}", app.subscriptionDelete)
 
-	return mux
+	return app.logRequest(commonHeaders(mux))
 }
