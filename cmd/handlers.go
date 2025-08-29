@@ -44,10 +44,8 @@ func (app *application) subscriptionView(w http.ResponseWriter, r *http.Request)
 	}
 
 	data := struct {
-		Status       string              `json:"status"`
 		Subscription models.Subscription `json:"subscription"`
 	}{
-		Status:       "success",
 		Subscription: subscription,
 	}
 
@@ -116,11 +114,70 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 	}
 
 	data := struct {
-		Status        string                `json:"status"`
 		Subscriptions []models.Subscription `json:"subscriptions"`
 	}{
-		Status:        "success",
 		Subscriptions: subscriptions,
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBytes)
+}
+
+func (app *application) subscriptionTotal(w http.ResponseWriter, r *http.Request) {
+	var filter models.SubscriptionFilter
+	query := r.URL.Query()
+
+	if userIDStr := query.Get("user_id"); userIDStr != "" {
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid user_id format", http.StatusBadRequest)
+			return
+		}
+		filter.UserID = &userID
+	}
+
+	if serviceName := query.Get("service_name"); serviceName != "" {
+		filter.ServiceName = &serviceName
+	}
+
+	if startDateStr := query.Get("start_date"); startDateStr != "" {
+		startDate, err := time.Parse("2006-01-02", startDateStr)
+		if err != nil {
+			http.Error(w, "Invalid start_date format", http.StatusBadRequest)
+			return
+		}
+		filter.StartDate = &startDate
+	}
+
+	if endDateStr := query.Get("end_date"); endDateStr != "" {
+		endDate, err := time.Parse("2006-01-02", endDateStr)
+		if err != nil {
+			http.Error(w, "Invalid end_date format", http.StatusBadRequest)
+			return
+		}
+		filter.EndDate = &endDate
+	}
+
+	total, err := app.subscriptions.CountTotal(filter)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	data := struct {
+		Total int `json:"total"`
+	}{
+		Total: total,
 	}
 
 	jsonBytes, err := json.Marshal(data)
@@ -174,11 +231,9 @@ func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Reques
 	}
 
 	data := struct {
-		Status string    `json:"status"`
-		Id     uuid.UUID `json:"id"`
+		Id uuid.UUID `json:"id"`
 	}{
-		Status: "success",
-		Id:     id,
+		Id: id,
 	}
 
 	jsonBytes, err := json.Marshal(data)
@@ -232,11 +287,9 @@ func (app *application) subscriptionUpdate(w http.ResponseWriter, r *http.Reques
 	}
 
 	data := struct {
-		Status string    `json:"status"`
-		Id     uuid.UUID `json:"id"`
+		Id uuid.UUID `json:"id"`
 	}{
-		Status: "success",
-		Id:     id,
+		Id: id,
 	}
 
 	jsonBytes, err := json.Marshal(data)
@@ -267,18 +320,5 @@ func (app *application) subscriptionDelete(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	data := struct {
-		Status string `json:"status"`
-	}{
-		Status: "success",
-	}
-
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonBytes)
+	w.WriteHeader(http.StatusOK)
 }

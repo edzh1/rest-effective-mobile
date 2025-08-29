@@ -167,3 +167,51 @@ func (m *SubscriptionModel) Delete(id uuid.UUID) error {
 	}
 	return nil
 }
+
+func (m *SubscriptionModel) CountTotal(filter SubscriptionFilter) (int, error) {
+	var total int
+	argIndex := 1
+	args := []interface{}{}
+	stmt := `
+		SELECT COALESCE(SUM(price), 0)
+		FROM subscriptions
+		WHERE 1 = 1
+	`
+
+	if filter.UserID != nil {
+		stmt += fmt.Sprintf(" AND user_id = $%d", argIndex)
+		args = append(args, *filter.UserID)
+		argIndex++
+	}
+
+	if filter.ServiceName != nil {
+		stmt += fmt.Sprintf(" AND service_name = $%d", argIndex)
+		args = append(args, *filter.ServiceName)
+		argIndex++
+	}
+
+	if filter.StartDate != nil {
+		stmt += fmt.Sprintf(" AND start_date >= $%d", argIndex)
+		args = append(args, *filter.StartDate)
+		argIndex++
+	}
+
+	if filter.EndDate != nil {
+		stmt += fmt.Sprintf(" AND end_date <= $%d", argIndex)
+		args = append(args, *filter.EndDate)
+		argIndex++
+	}
+
+	row := m.DB.QueryRow(stmt, args...)
+	err := row.Scan(&total)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrNoRecord
+		} else {
+			return 0, err
+		}
+	}
+
+	return total, nil
+}
