@@ -13,18 +13,36 @@ import (
 )
 
 type subscriptionCreateBody struct {
-	UserID      string `json:"user_id"`
-	ServiceName string `json:"service_name"`
-	Price       int    `json:"price"`
-	StartDate   string `json:"start_date"`
-	EndDate     string `json:"end_date,omitempty"`
+	UserID      string `json:"user_id" example:"60601fee-2bf1-4721-ae6f-7636e79a0cba"`
+	ServiceName string `json:"service_name" example:"Yandex Plus"`
+	Price       int    `json:"price" example:"400"`
+	StartDate   string `json:"start_date" example:"2025-07-01"`
+	EndDate     string `json:"end_date,omitempty" example:""`
 }
 
 type subscriptionUpdateBody struct {
-	ID uuid.UUID `json:"id"`
 	subscriptionCreateBody
 }
 
+type IDResponse struct {
+	ID uuid.UUID `json:"id" example:"a3509860-d66f-4be4-8984-0b7a15b8f10c"`
+}
+
+type TotalResponse struct {
+	Total int `json:"total" example:"100500"`
+}
+
+// subscriptionView godoc
+// @Summary Get subscription by ID
+// @Description Get a single subscription by its ID
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path string true "Subscription ID" Format(uuid)
+// @Success 200 {object} models.Subscription
+// @Failure 400 {string} string "Invalid UUID format"
+// @Failure 404 {string} string "404 page not found"
+// @Router /subscriptions/{id} [get]
 func (app *application) subscriptionView(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
@@ -59,6 +77,20 @@ func (app *application) subscriptionView(w http.ResponseWriter, r *http.Request)
 	w.Write(jsonBytes)
 }
 
+// subscriptionViewList godoc
+// @Summary List subscriptions with filters
+// @Description Get list of subscriptions with optional filters
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param user_id query string false "User ID filter" Format(uuid)
+// @Param service_name query string false "Service name filter"
+// @Param start_date query string false "Start date filter (YYYY-MM-DD)" Format(date)
+// @Param end_date query string false "End date filter (YYYY-MM-DD)" Format(date)
+// @Param page query int false "Page number" minimum(1) maximum(100)
+// @Success 200 {object} []models.Subscription
+// @Failure 400 {string} string "Invalid parameter format"
+// @Router /subscriptions [get]
 func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Request) {
 	var filter models.SubscriptionFilter
 	query := r.URL.Query()
@@ -129,6 +161,19 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 	w.Write(jsonBytes)
 }
 
+// subscriptionTotal godoc
+// @Summary Calculate total subscription cost
+// @Description Calculate total cost of subscriptions for a period with filters
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param user_id query string false "User ID filter" Format(uuid)
+// @Param service_name query string false "Service name filter"
+// @Param start_date query string false "Period start (YYYY-MM-DD)" Format(date)
+// @Param end_date query string false "Period end (YYYY-MM-DD)" Format(date)
+// @Success 200 {object} TotalResponse
+// @Failure 400 {string} string "Invalid parameter format"
+// @Router /subscriptions/total [get]
 func (app *application) subscriptionTotal(w http.ResponseWriter, r *http.Request) {
 	var filter models.SubscriptionFilter
 	query := r.URL.Query()
@@ -190,6 +235,16 @@ func (app *application) subscriptionTotal(w http.ResponseWriter, r *http.Request
 	w.Write(jsonBytes)
 }
 
+// subscriptionCreate godoc
+// @Summary Create new subscription
+// @Description Create a new subscription record
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param subscription body subscriptionCreateBody true "Subscription data"
+// @Success 200 {object} IDResponse "{"id": "a3509860-d66f-4be4-8984-0b7a15b8f10c"}"
+// @Failure 400 {string} string "Bad Request"
+// @Router /subscriptions [post]
 func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Request) {
 	reader := r.Body
 	defer reader.Close()
@@ -230,10 +285,8 @@ func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	data := struct {
-		Id uuid.UUID `json:"id"`
-	}{
-		Id: id,
+	data := IDResponse{
+		ID: id,
 	}
 
 	jsonBytes, err := json.Marshal(data)
@@ -246,7 +299,25 @@ func (app *application) subscriptionCreate(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonBytes)
 }
 
+// subscriptionUpdate godoc
+// @Summary Update subscription
+// @Description Update an existing subscription
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path string true "Subscription ID" Format(uuid)
+// @Param subscription body subscriptionUpdateBody true "Updated subscription data"
+// @Success 200 {object} IDResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Not Found"
+// @Router /subscriptions/{id} [put]
 func (app *application) subscriptionUpdate(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Invalid UUID format", http.StatusBadRequest)
+		return
+	}
+
 	reader := r.Body
 	defer reader.Close()
 
@@ -280,16 +351,14 @@ func (app *application) subscriptionUpdate(w http.ResponseWriter, r *http.Reques
 		endDate = &t
 	}
 
-	id, err := app.subscriptions.Update(reqBody.ID, reqBody.UserID, reqBody.ServiceName, reqBody.Price, startDate, endDate)
+	_, err = app.subscriptions.Update(id, reqBody.UserID, reqBody.ServiceName, reqBody.Price, startDate, endDate)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	data := struct {
-		Id uuid.UUID `json:"id"`
-	}{
-		Id: id,
+	data := IDResponse{
+		ID: id,
 	}
 
 	jsonBytes, err := json.Marshal(data)
@@ -302,6 +371,17 @@ func (app *application) subscriptionUpdate(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonBytes)
 }
 
+// subscriptionDelete godoc
+// @Summary Delete subscription
+// @Description Delete a subscription by ID
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param id path string true "Subscription ID" Format(uuid)
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Invalid UUID format"
+// @Failure 404 {string} string "Not Found"
+// @Router /subscriptions/{id} [delete]
 func (app *application) subscriptionDelete(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {

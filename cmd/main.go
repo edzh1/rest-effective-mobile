@@ -10,6 +10,8 @@ import (
 	"github.com/edzh1/rest-effective-mobile/internal"
 	"github.com/edzh1/rest-effective-mobile/internal/models"
 	"github.com/joho/godotenv"
+
+	_ "github.com/edzh1/rest-effective-mobile/docs"
 )
 
 type application struct {
@@ -17,12 +19,13 @@ type application struct {
 	subscriptions *models.SubscriptionModel
 }
 
+// @title rest-effective-mobile/
+// @version 1.0
+// @description Тестовое задание по управлению подписками.
+// @host localhost:3000
+// @BasePath /
 func main() {
-	// TODO add instruction how to run
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
+	_ = godotenv.Load()
 
 	port, err := strconv.Atoi(os.Getenv("POSTGRES_PORT"))
 	if err != nil {
