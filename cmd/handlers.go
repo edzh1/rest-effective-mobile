@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/edzh1/rest-effective-mobile/internal/models"
@@ -95,6 +96,15 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 		filter.EndDate = &endDate
 	}
 
+	if pageStr := query.Get("page"); pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page == 0 {
+			http.Error(w, "Invalid page format", http.StatusBadRequest)
+			return
+		}
+		filter.Page = &page
+	}
+
 	subscriptions, err := app.subscriptions.List(filter)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -107,7 +117,7 @@ func (app *application) subscriptionViewList(w http.ResponseWriter, r *http.Requ
 
 	data := struct {
 		Status        string                `json:"status"`
-		Subscriptions []models.Subscription `json:"subscription"`
+		Subscriptions []models.Subscription `json:"subscriptions"`
 	}{
 		Status:        "success",
 		Subscriptions: subscriptions,

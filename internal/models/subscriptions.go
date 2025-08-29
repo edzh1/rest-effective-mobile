@@ -87,9 +87,8 @@ func (m *SubscriptionModel) List(filter SubscriptionFilter) ([]Subscription, err
 	}
 
 	if filter.Page != nil {
-		stmt += fmt.Sprintf(" AND offset = $%d AND limit = $%d", argIndex, argIndex+1)
-		args = append(args, *filter.Page*limit, limit)
-		argIndex += 2
+		stmt += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
+		args = append(args, limit, (*filter.Page-1)*limit)
 	}
 
 	rows, err := m.DB.Query(stmt, args...)
