@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -70,7 +71,7 @@ func (m *SubscriptionModel) List(filter SubscriptionFilter) ([]Subscription, err
 
 	if filter.ServiceName != nil {
 		stmt += fmt.Sprintf(" AND service_name = $%d", argIndex)
-		args = append(args, *filter.ServiceName)
+		args = append(args, strings.ToLower(*filter.ServiceName))
 		argIndex++
 	}
 
@@ -131,7 +132,7 @@ func (m *SubscriptionModel) Insert(userID, serviceName string, price int, startD
 
 func (m *SubscriptionModel) Update(id uuid.UUID, userID, serviceName string, price int, startDate time.Time, endDate *time.Time) (uuid.UUID, error) {
 	stmt := `
-		INSERT INTO subscriptions
+		UPDATE subscriptions
 		SET user_id = $2, service_name = $3, price = $4, start_date = $5, end_date = $6 
 		WHERE id = $1
 	`
@@ -186,7 +187,7 @@ func (m *SubscriptionModel) CountTotal(filter SubscriptionFilter) (int, error) {
 
 	if filter.ServiceName != nil {
 		stmt += fmt.Sprintf(" AND service_name = $%d", argIndex)
-		args = append(args, *filter.ServiceName)
+		args = append(args, strings.ToLower(*filter.ServiceName))
 		argIndex++
 	}
 
